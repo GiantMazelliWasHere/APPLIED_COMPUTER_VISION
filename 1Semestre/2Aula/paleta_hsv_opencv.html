@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paleta HSV OpenCV</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+            color: #222;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 30px auto;
+            background: white;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .12);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .subtitle {
+            color: #555;
+            margin-bottom: 24px;
+        }
+
+        .palette {
+            height: 70px;
+            border-radius: 10px;
+            background: linear-gradient(to right,
+                    hsl(0, 100%, 50%),
+                    hsl(60, 100%, 50%),
+                    hsl(120, 100%, 50%),
+                    hsl(180, 100%, 50%),
+                    hsl(240, 100%, 50%),
+                    hsl(300, 100%, 50%),
+                    hsl(360, 100%, 50%));
+            border: 1px solid #aaa;
+            margin-bottom: 8px;
+        }
+
+        .scale {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 26px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .swatch {
+            height: 150px;
+            border-radius: 10px;
+            border: 1px solid #999;
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: grid;
+            grid-template-columns: 34px 1fr 58px;
+            gap: 10px;
+            align-items: center;
+            margin: 14px 0;
+        }
+
+        input[type=range] {
+            width: 100%;
+        }
+
+        input[type=number] {
+            width: 52px;
+            padding: 5px;
+        }
+
+        .code {
+            background: #1e1e1e;
+            color: #f1f1f1;
+            padding: 13px;
+            border-radius: 8px;
+            font-family: Consolas, monospace;
+            font-size: 15px;
+            overflow-x: auto;
+        }
+
+        .info {
+            background: #eef6ff;
+            border-left: 5px solid #2477c9;
+            padding: 14px;
+            margin-top: 24px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 700px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Paleta HSV na escala do OpenCV</h1>
+        <div class="subtitle">
+            H varia de 0 a 179. S e V variam de 0 a 255.
+        </div>
+
+        <h2>Mapa visual da tonalidade H</h2>
+        <div class="palette"></div>
+        <div class="scale">
+            <span>0<br>vermelho</span>
+            <span>30<br>amarelo</span>
+            <span>60<br>verde</span>
+            <span>90<br>ciano</span>
+            <span>120<br>azul</span>
+            <span>150<br>magenta</span>
+            <span>179<br>vermelho</span>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Limite mÃ­nimo</h2>
+                <div id="swatchMin" class="swatch"></div>
+
+                <label>H
+                    <input id="hMin" type="range" min="0" max="179" value="5">
+                    <input id="hMinNum" type="number" min="0" max="179" value="5">
+                </label>
+
+                <label>S
+                    <input id="sMin" type="range" min="0" max="255" value="100">
+                    <input id="sMinNum" type="number" min="0" max="255" value="100">
+                </label>
+
+                <label>V
+                    <input id="vMin" type="range" min="0" max="255" value="100">
+                    <input id="vMinNum" type="number" min="0" max="255" value="100">
+                </label>
+
+                <div id="codeMin" class="code"></div>
+            </div>
+
+            <div class="card">
+                <h2>Limite mÃ¡ximo</h2>
+                <div id="swatchMax" class="swatch"></div>
+
+                <label>H
+                    <input id="hMax" type="range" min="0" max="179" value="20">
+                    <input id="hMaxNum" type="number" min="0" max="179" value="20">
+                </label>
+
+                <label>S
+                    <input id="sMax" type="range" min="0" max="255" value="255">
+                    <input id="sMaxNum" type="number" min="0" max="255" value="255">
+                </label>
+
+                <label>V
+                    <input id="vMax" type="range" min="0" max="255" value="255">
+                    <input id="vMaxNum" type="number" min="0" max="255" value="255">
+                </label>
+
+                <div id="codeMax" class="code"></div>
+            </div>
+        </div>
+
+        <div class="info">
+            Os dois quadrados nÃ£o representam toda a faixa aceita. Eles mostram apenas os extremos.
+            O cÃ³digo seleciona qualquer pixel cujo H, S e V estejam simultaneamente entre os valores mÃ­nimo e mÃ¡ximo.
+        </div>
+    </div>
+
+    <script>
+        function hsvOpenCVToCss(h, s, v) {
+            const hue = h * 2;
+            const sat = (s / 255) * 100;
+            const val = v / 255;
+
+            const light = val * (1 - (sat / 100) / 2);
+            const cssSat = light === 0 || light === 1
+                ? 0
+                : (val - light) / Math.min(light, 1 - light);
+
+            return `hsl(${hue}, ${cssSat * 100}%, ${light * 100}%)`;
+        }
+
+        function bindPair(rangeId, numberId, callback) {
+            const range = document.getElementById(rangeId);
+            const number = document.getElementById(numberId);
+
+            function syncFromRange() {
+                number.value = range.value;
+                callback();
+            }
+
+            function syncFromNumber() {
+                let value = Number(number.value);
+                value = Math.max(Number(number.min), Math.min(Number(number.max), value));
+                number.value = value;
+                range.value = value;
+                callback();
+            }
+
+            range.addEventListener('input', syncFromRange);
+            number.addEventListener('input', syncFromNumber);
+        }
+
+        function update() {
+            const hMin = Number(document.getElementById('hMin').value);
+            const sMin = Number(document.getElementById('sMin').value);
+            const vMin = Number(document.getElementById('vMin').value);
+
+            const hMax = Number(document.getElementById('hMax').value);
+            const sMax = Number(document.getElementById('sMax').value);
+            const vMax = Number(document.getElementById('vMax').value);
+
+            document.getElementById('swatchMin').style.background =
+                hsvOpenCVToCss(hMin, sMin, vMin);
+
+            document.getElementById('swatchMax').style.background =
+                hsvOpenCVToCss(hMax, sMax, vMax);
+
+            document.getElementById('codeMin').textContent =
+                `laranja_minimo = np.array([${hMin}, ${sMin}, ${vMin}])`;
+
+            document.getElementById('codeMax').textContent =
+                `laranja_maximo = np.array([${hMax}, ${sMax}, ${vMax}])`;
+        }
+
+        [
+            ['hMin', 'hMinNum'], ['sMin', 'sMinNum'], ['vMin', 'vMinNum'],
+            ['hMax', 'hMaxNum'], ['sMax', 'sMaxNum'], ['vMax', 'vMaxNum']
+        ].forEach(pair => bindPair(pair[0], pair[1], update));
+
+        update();
+    </script>
+</body>
+
+</html>
