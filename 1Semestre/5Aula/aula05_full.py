@@ -7,7 +7,7 @@ CANNY_MIN = 100
 
 CANNY_MAX = 200
 
-imagem = cv2.imread("APPLIED_COMPUTER_VISION/1Semestre/5Aula/img/imagem 1.png")
+imagem = cv2.imread("APPLIED_COMPUTER_VISION/1Semestre/5Aula/img/memeV2.jpg")
 
 media = cv2.blur(
     imagem,
